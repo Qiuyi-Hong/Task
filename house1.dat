@@ -1,0 +1,25 @@
+namespace base {
+    param c := 1;
+
+    param eta_c := 0.9;
+
+    param eta_d := 0.9; 
+
+    param epsilon := 0.002;
+
+    param E_min := 0;
+
+    param E_max := 4;
+
+    param E_init := 2;
+
+    param p_c_min := 0;
+
+    param p_c_max := 2;
+
+    param p_d_min := 0;
+
+    param p_d_max := 2;
+
+    param delta_t := 0.5;
+}
