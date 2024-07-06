@@ -1,5 +1,5 @@
 namespace base {
-    param c := 1;
+    param c := 0.5;
 
     param eta_c := 0.9;
 
