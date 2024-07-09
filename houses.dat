@@ -55,4 +55,8 @@ namespace base {
                 3    4;
 
     param delta_t := 0.5;
+
+    param q_min := 0; 
+
+    param q_max := 1000;
 }

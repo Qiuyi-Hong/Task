@@ -38,6 +38,10 @@ model.delta_t = pyo.Param()
 # PV generation in kW
 model.q_pv = pyo.Param(model.H, model.T, mutable=True)
 
+# P2P market params:
+model.q_min = pyo.Param()
+model.q_max = pyo.Param()
+
 ############################################################################
 ######################## Setting decision variables: ####################### 
 ############################################################################
@@ -60,6 +64,10 @@ model.q_buy = pyo.Var(model.H, model.T, within=pyo.NonNegativeReals)
 
 # electricity volume sold to the P2P market in kWh
 model.q_sell = pyo.Var(model.H, model.T, within=pyo.NonNegativeReals)
+
+# binary variable to indicate if the house is buying electricity from the P2P market
+model.sigma_buy = pyo.Var(model.H, model.T, within=pyo.Boolean)
+model.sigma_sell = pyo.Var(model.H, model.T, within=pyo.Boolean)
 
 ############################################################################
 ######################## Setting constraints: ############################## 
@@ -114,17 +122,43 @@ def gammaConstr(model, h, t):
 
 model.constr9 = pyo.Constraint(model.H, model.T, rule=gammaConstr)
 
+def p2pBuyMin(model, h, t):
+    return model.q_buy[h, t] >= model.sigma_buy[h, t] * model.q_min * model.delta_t
+
+model.constr10 = pyo.Constraint(model.H, model.T, rule=p2pBuyMin)
+
+def p2pBuyMax(model, h, t):
+    return model.q_buy[h, t] <= model.sigma_buy[h, t] * model.q_max * model.delta_t
+
+model.constr11 = pyo.Constraint(model.H, model.T, rule=p2pBuyMax) 
+
+def p2pSellMin(model, h, t):
+    return model.q_sell[h, t] >= model.sigma_sell[h, t] * model.q_min * model.delta_t
+
+model.constr12 = pyo.Constraint(model.H, model.T, rule=p2pSellMin)
+
+def p2pSellMax(model, h, t):
+    return model.q_sell[h, t] <= model.sigma_sell[h, t] * model.q_max * model.delta_t
+
+model.constr13 = pyo.Constraint(model.H, model.T, rule=p2pSellMax) 
+
+def sigmaConstr(model, h, t):
+    return model.sigma_buy[h, t] + model.sigma_sell[h, t] <= 1
+
+model.constr14 = pyo.Constraint(model.H, model.T, rule=sigmaConstr)
+
 # Power balance constraints:
 def powerBalance(model, h, t):
     return model.d[h, t] * model.delta_t + model.p_c[h, t] * model.delta_t + model.q_export[h, t] + model.q_sell[h, t] == model.p_d[h, t] * model.delta_t + model.q_pv[h, t] * model.delta_t + model.q_import[h, t] + model.q_buy[h, t]
 
-model.constr10 = pyo.Constraint(model.H, model.T, rule=powerBalance)
+model.constr15 = pyo.Constraint(model.H, model.T, rule=powerBalance)
 
 # P2P market constraints:
 def p2pMarket(model, t):
     return sum(model.q_buy[h, t] for h in model.H) == sum(model.q_sell[h, t] for h in model.H)
 
-model.constr11 = pyo.Constraint(model.T, rule=p2pMarket)
+model.constr16 = pyo.Constraint(model.T, rule=p2pMarket)
+
 
 ############################################################################
 ######################## Setting objective function: ####################### 
